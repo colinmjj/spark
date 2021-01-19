@@ -38,6 +38,7 @@ import org.apache.spark.sql.execution.adaptive.{AdaptiveExecutionContext, Insert
 import org.apache.spark.sql.execution.bucketing.{CoalesceBucketsInJoin, DisableUnnecessaryBucketedScan}
 import org.apache.spark.sql.execution.dynamicpruning.PlanDynamicPruningFilters
 import org.apache.spark.sql.execution.exchange.{EnsureRequirements, ReuseExchange}
+import org.apache.spark.sql.execution.mv.MaterializedViewOptimizer
 import org.apache.spark.sql.execution.streaming.{IncrementalExecution, OffsetSeqMetadata}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.streaming.OutputMode
@@ -73,12 +74,22 @@ class QueryExecution(
     sparkSession.sessionState.analyzer.executeAndCheck(logical, tracker)
   }
 
+  lazy val materialized: LogicalPlan = executePhase(QueryPlanningTracker.MATERIALIZED) {
+    if (sparkSession.sessionState.conf.isMaterializedViewEnabled) {
+      assertAnalyzed()
+      val mvOptimizer = new MaterializedViewOptimizer(sparkSession.sessionState.analyzer)
+      mvOptimizer.execute(analyzed.clone)
+    } else {
+      analyzed
+    }
+  }
+
   lazy val withCachedData: LogicalPlan = sparkSession.withActive {
     assertAnalyzed()
     assertSupported()
     // clone the plan to avoid sharing the plan instance between different stages like analyzing,
     // optimizing and planning.
-    sparkSession.sharedState.cacheManager.useCachedData(analyzed.clone())
+    sparkSession.sharedState.cacheManager.useCachedData(materialized.clone())
   }
 
   lazy val optimizedPlan: LogicalPlan = executePhase(QueryPlanningTracker.OPTIMIZATION) {
@@ -219,6 +230,10 @@ class QueryExecution(
       )
       append("\n")
       QueryPlan.append(analyzed, append, verbose, addSuffix, maxFields)
+      if (sparkSession.sessionState.conf.isMaterializedViewEnabled) {
+        append("\n== Materialized Logical Plan ==\n")
+        QueryPlan.append(materialized, append, verbose, addSuffix, maxFields)
+      }
       append("\n== Optimized Logical Plan ==\n")
       QueryPlan.append(optimizedPlan, append, verbose, addSuffix, maxFields)
       append("\n== Physical Plan ==\n")

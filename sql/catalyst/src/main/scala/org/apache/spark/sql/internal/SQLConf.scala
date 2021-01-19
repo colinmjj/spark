@@ -2219,6 +2219,22 @@ object SQLConf {
       .booleanConf
       .createWithDefault(false)
 
+  val MATERIALIZED_VIEW_ENABLED = buildConf("spark.sql.materializedView.enable")
+    .doc("enable materialized view")
+    .booleanConf
+    .createWithDefault(false)
+
+  val MATERIALIZED_VIEW_DATABASES = buildConf("spark.sql.materializedView.databases")
+    .doc("A comma-separated list of databases which store materialized views")
+    .stringConf
+    .toSequence
+    .createWithDefault(Seq("mv_db"))
+
+  val MATERIALIZED_VIEW_PFMODEL_ENABLED = buildConf("spark.sql.materializedView.pfmodel.enable")
+    .doc("enable PK-FK model in materialized view optimization when has join")
+    .booleanConf
+    .createWithDefault(false)
+
   object PartitionOverwriteMode extends Enumeration {
     val STATIC, DYNAMIC = Value
   }
@@ -3660,6 +3676,12 @@ class SQLConf extends Serializable with Logging {
   def disabledJdbcConnectionProviders: String = getConf(SQLConf.DISABLED_JDBC_CONN_PROVIDER_LIST)
 
   def charVarcharAsString: Boolean = getConf(SQLConf.LEGACY_CHAR_VARCHAR_AS_STRING)
+
+  def isMaterializedViewEnabled: Boolean = getConf(SQLConf.MATERIALIZED_VIEW_ENABLED)
+
+  def materializedViewDbs: Seq[String] = getConf(SQLConf.MATERIALIZED_VIEW_DATABASES)
+
+  def isMaterializedViewPFModelEnabled: Boolean = getConf(SQLConf.MATERIALIZED_VIEW_PFMODEL_ENABLED)
 
   /** ********************** SQLConf functionality methods ************ */
 
