@@ -343,7 +343,8 @@ class ResolveSessionCatalog(
       }
 
     case DropTable(ResolvedV1TableIdentifier(ident), ifExists, purge) =>
-      DropTableCommand(ident.asTableIdentifier, ifExists, isView = false, purge = purge)
+      DropTableCommand(ident.asTableIdentifier, ifExists,
+        isView = false, purge = purge, isMaterializedView = false)
 
     // v1 DROP TABLE supports temp view.
     case DropTable(r: ResolvedView, ifExists, purge) =>
@@ -351,11 +352,13 @@ class ResolveSessionCatalog(
         throw new AnalysisException(
           "Cannot drop a view with DROP TABLE. Please use DROP VIEW instead")
       }
-      DropTableCommand(r.identifier.asTableIdentifier, ifExists, isView = false, purge = purge)
+      DropTableCommand(r.identifier.asTableIdentifier, ifExists,
+        isView = false, purge = purge, isMaterializedView = false)
 
     // v1 DROP TABLE supports temp view.
     case DropViewStatement(TempViewOrV1Table(name), ifExists) =>
-      DropTableCommand(name.asTableIdentifier, ifExists, isView = true, purge = false)
+      DropTableCommand(name.asTableIdentifier, ifExists, isView = true, purge = false,
+        isMaterializedView = false)
 
     case c @ CreateNamespaceStatement(CatalogAndNamespace(catalog, ns), _, _)
         if isSessionCatalog(catalog) =>

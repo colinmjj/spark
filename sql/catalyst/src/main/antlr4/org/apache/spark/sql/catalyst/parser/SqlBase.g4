@@ -241,6 +241,17 @@ statement
     | SET .*?                                                          #setConfiguration
     | RESET configKey                                                  #resetQuotedConfiguration
     | RESET .*?                                                        #resetConfiguration
+    | CREATE MATERIALIZED VIEW (IF NOT EXISTS)? tableIdentifier
+            ((COMMENT comment=STRING) |
+            PARTITIONED BY partitionColumnNames=identifierList |
+            bucketSpec |
+            rowFormat |
+            createFileFormat |
+            (TBLPROPERTIES tableProps=tablePropertyList))*
+            AS query                                                   #createHiveMaterializedView
+    | DROP MATERIALIZED VIEW tableIdentifier                           #dropMaterializedView
+    | ALTER MATERIALIZED VIEW tableIdentifier
+                (((ENABLE|DISABLE) REWRITE) | REBUILD)                 #alterMaterializedView
     | unsupportedHiveNativeCommands .*?                                #failNativeCommand
     ;
 
@@ -1287,11 +1298,13 @@ nonReserved
     | DFS
     | DIRECTORIES
     | DIRECTORY
+    | DISABLE
     | DISTINCT
     | DISTRIBUTE
     | DIV
     | DROP
     | ELSE
+    | ENABLE
     | END
     | ESCAPE
     | ESCAPED
@@ -1352,6 +1365,7 @@ nonReserved
     | MACRO
     | MAP
     | MATCHED
+    | MATERIALIZED
     | MERGE
     | MSCK
     | NAMESPACE
@@ -1387,6 +1401,7 @@ nonReserved
     | PURGE
     | QUERY
     | RANGE
+    | REBUILD
     | RECORDREADER
     | RECORDWRITER
     | RECOVER
@@ -1398,6 +1413,7 @@ nonReserved
     | REPLACE
     | RESET
     | RESTRICT
+    | REWRITE
     | REVOKE
     | RLIKE
     | ROLE
@@ -1533,11 +1549,13 @@ DESCRIBE: 'DESCRIBE';
 DFS: 'DFS';
 DIRECTORIES: 'DIRECTORIES';
 DIRECTORY: 'DIRECTORY';
+DISABLE: 'DISABLE';
 DISTINCT: 'DISTINCT';
 DISTRIBUTE: 'DISTRIBUTE';
 DIV: 'DIV';
 DROP: 'DROP';
 ELSE: 'ELSE';
+ENABLE: 'ENABLE';
 END: 'END';
 ESCAPE: 'ESCAPE';
 ESCAPED: 'ESCAPED';
@@ -1604,6 +1622,7 @@ LOGICAL: 'LOGICAL';
 MACRO: 'MACRO';
 MAP: 'MAP';
 MATCHED: 'MATCHED';
+MATERIALIZED: 'MATERIALIZED';
 MERGE: 'MERGE';
 MSCK: 'MSCK';
 NAMESPACE: 'NAMESPACE';
@@ -1641,6 +1660,7 @@ PROPERTIES: 'PROPERTIES';
 PURGE: 'PURGE';
 QUERY: 'QUERY';
 RANGE: 'RANGE';
+REBUILD: 'REBUILD';
 RECORDREADER: 'RECORDREADER';
 RECORDWRITER: 'RECORDWRITER';
 RECOVER: 'RECOVER';
@@ -1653,6 +1673,7 @@ REPLACE: 'REPLACE';
 RESET: 'RESET';
 RESTRICT: 'RESTRICT';
 REVOKE: 'REVOKE';
+REWRITE: 'REWRITE';
 RIGHT: 'RIGHT';
 RLIKE: 'RLIKE' | 'REGEXP';
 ROLE: 'ROLE';
